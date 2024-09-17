@@ -37,9 +37,7 @@ function TicketDetails() {
   const [openError, setOpenError] = useState(false);
   const [validationError, setValidationError] = useState('');
   const [successMessage, setSuccessMessage] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-
-  const [users, setUsers] = useState([]);
+  const [transferEmail, setTransferEmail] = useState(''); // Estado para o e-mail de transferência
 
   const isAdmin = user && user.roles && user.roles.includes('Admin');
   const isAtendente = user && user.roles && user.roles.includes('Atendente');
@@ -50,20 +48,17 @@ function TicketDetails() {
         let response;
 
         if (isAdmin) {
-          response = await axios.get(
-            `http://localhost:5228/v1/admin/${id}`,
-            { withCredentials: true }
-          );
+          response = await axios.get(`http://localhost:5228/v1/admin/${id}`, {
+            withCredentials: true,
+          });
         } else if (isAtendente) {
-          response = await axios.get(
-            `http://localhost:5228/v1/assignment/${id}`,
-            { withCredentials: true }
-          );
+          response = await axios.get(`http://localhost:5228/v1/assignment/${id}`, {
+            withCredentials: true,
+          });
         } else {
-          response = await axios.get(
-            `http://localhost:5228/v1/tickets/${id}`,
-            { withCredentials: true }
-          );
+          response = await axios.get(`http://localhost:5228/v1/tickets/${id}`, {
+            withCredentials: true,
+          });
         }
 
         const ticketData = response.data.data || response.data;
@@ -71,6 +66,8 @@ function TicketDetails() {
         setComments(ticketData.comments || []);
         setStatus(ticketData.status);
         setAssignedTo(ticketData.assignedTo || '');
+        setSolutionResolved(ticketData.solutionResolved || '');
+        setReasonCanceled(ticketData.reasonCanceled || '');
       } catch (error) {
         console.error('Erro ao buscar detalhes do ticket:', error);
       } finally {
@@ -109,15 +106,9 @@ function TicketDetails() {
     }
   };
 
-  const toggleEditMode = () => {
-    setIsEditing(!isEditing); // Alternar entre visualização e edição
-  };
-
   const handleUpdateTicket = async () => {
-    // Limpar mensagens de erro de validação antes de verificar
     setValidationError('');
 
-    // Verificação de campos obrigatórios dependendo do status
     if (status === 3 && !solutionResolved) {
       setValidationError('A solução é obrigatória para resolver o ticket.');
       return;
@@ -136,12 +127,13 @@ function TicketDetails() {
       }
 
       await axios.put(
-        `http://localhost:5228/v1/assignment/${id}`,
+        isAdmin
+          ? `http://localhost:5228/v1/admin/${id}`
+          : `http://localhost:5228/v1/assignment/${id}`,
         payload,
         { withCredentials: true }
       );
 
-      // Exibir a mensagem de sucesso e iniciar o redirecionamento após 2 segundos
       setSuccessMessage(true);
       setTimeout(() => {
         navigate('/'); // Redirecionar para o dashboard após 2 segundos
@@ -149,6 +141,31 @@ function TicketDetails() {
     } catch (error) {
       console.error('Erro ao atualizar ticket:', error);
       setError('Erro ao atualizar ticket. Tente novamente.');
+      setOpenError(true);
+    }
+  };
+
+  const handleTransferTicket = async () => {
+    if (!transferEmail) {
+      setValidationError('O e-mail de transferência é obrigatório.');
+      return;
+    }
+
+    try {
+      await axios.put(
+        isAdmin
+          ? `http://localhost:5228/v1/admin/transfer/${id}`
+          : `http://localhost:5228/v1/assignment/transfer/${id}`,
+        { assignmentEmail: transferEmail },
+        { withCredentials: true }
+      );
+      setSuccessMessage(true);
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
+    } catch (error) {
+      console.error('Erro ao transferir o ticket:', error);
+      setError('Erro ao transferir o ticket. Tente novamente.');
       setOpenError(true);
     }
   };
@@ -204,17 +221,6 @@ function TicketDetails() {
           </Typography>
         )}
 
-        {/* Botão para alternar entre visualização e edição */}
-        <Button
-          variant="contained"
-          color="secondary"
-          onClick={toggleEditMode}
-          sx={{ marginBottom: 2 }}
-        >
-          {isEditing ? 'Salvar' : 'Editar'}
-        </Button>
-        
-        {/* Seção de comentários */}
         <Box sx={{ marginTop: 4 }}>
           <Typography variant="h6">Comentários</Typography>
           {comments.length === 0 && <Typography>Nenhum comentário.</Typography>}
@@ -247,7 +253,6 @@ function TicketDetails() {
           </Button>
         </Box>
 
-        {/* Exibir erros */}
         <Collapse in={openError}>
           <Alert
             severity="error"
@@ -258,22 +263,19 @@ function TicketDetails() {
           </Alert>
         </Collapse>
 
-        {/* Exibir erro de validação */}
         {validationError && (
           <Alert severity="warning" sx={{ mt: 2 }}>
             {validationError}
           </Alert>
         )}
 
-        {/* Exibir mensagem de sucesso */}
         {successMessage && (
           <Alert severity="success" sx={{ mt: 2 }}>
             Ticket atualizado com sucesso! Redirecionando para a dashboard...
           </Alert>
         )}
 
-        {/* Seção para alterar o status do ticket */}
-        {isAtendente && (
+        {(isAdmin || (isAtendente && assignedTo === user.email && status === 2)) && (
           <Box sx={{ marginTop: 4 }}>
             <Typography variant="h6">Atualizar Status do Ticket</Typography>
             <FormControl fullWidth margin="normal">
@@ -291,7 +293,6 @@ function TicketDetails() {
               </Select>
             </FormControl>
 
-            {/* Se o status for resolvido, mostrar campo para solução */}
             {status === 3 && (
               <TextField
                 label="Solução"
@@ -305,7 +306,6 @@ function TicketDetails() {
               />
             )}
 
-            {/* Se o status for cancelado, mostrar campo para o motivo */}
             {status === 4 && (
               <TextField
                 label="Motivo do Cancelamento"
@@ -329,12 +329,26 @@ function TicketDetails() {
           </Box>
         )}
 
-        {/* Botão para voltar à tela principal */}
-        <Box sx={{ marginTop: 4 }}>
-          <Button variant="outlined" onClick={() => navigate('/')}>
-            Voltar à Tela Principal
-          </Button>
-        </Box>
+        {(isAdmin || (isAtendente && assignedTo === user.email && status === 2)) && (
+          <Box sx={{ marginTop: 4 }}>
+            <Typography variant="h6">Transferir Ticket</Typography>
+            <TextField
+              label="E-mail do novo atendente"
+              value={transferEmail}
+              onChange={(e) => setTransferEmail(e.target.value)}
+              fullWidth
+              margin="normal"
+              required
+            />
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={handleTransferTicket}
+            >
+              Transferir Ticket
+            </Button>
+          </Box>
+        )}
       </Paper>
     </Box>
   );

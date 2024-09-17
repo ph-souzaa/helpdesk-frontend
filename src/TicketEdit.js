@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import {
   Box,
@@ -12,10 +12,14 @@ import {
   Paper,
   Alert,
   Collapse,
+  CircularProgress,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { AuthContext } from './AuthContext'; // Importe o contexto de autenticação
 
-function TicketCreate() {
+function TicketEdit() {
+  const { id } = useParams();
+  const { user } = useContext(AuthContext); // Obter o usuário logado e seus papéis
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -25,10 +29,58 @@ function TicketCreate() {
   const [priority, setPriority] = useState('');
   const [error, setError] = useState('');
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  const isAdmin = user.roles && user.roles.includes('Admin'); // Verificar se o usuário é Admin
+
   useEffect(() => {
-    // Buscar todas as categorias com suas subcategorias
+    // Carregar os dados do ticket
+    const fetchTicket = async () => {
+      try {
+        const response = await axios.get(
+          isAdmin 
+            ? `http://localhost:5228/v1/admin/${id}` 
+            : `http://localhost:5228/v1/tickets/${id}`, // Use o endpoint correto baseado na role
+          {
+            withCredentials: true,
+          }
+        );
+
+        const ticket = response.data;
+
+        // Preencher os estados com os dados do ticket
+        setTitle(ticket.data.title);
+        setDescription(ticket.data.description);
+        setCategoryId(ticket.data.categoryId);
+        setSubcategoryId(ticket.data.subcategoryId);
+        setPriority(ticket.data.priority);
+
+        // Após carregar o ticket, buscar as subcategorias da categoria associada
+        if (ticket.data.categoryId) {
+          const selectedCategory = categories.find(
+            (category) => category.id === ticket.data.categoryId
+          );
+
+          if (selectedCategory && selectedCategory.subcategories) {
+            setSubcategories(selectedCategory.subcategories);
+          }
+        }
+
+        setLoading(false); // Carregamento concluído
+      } catch (error) {
+        console.error('Erro ao buscar ticket:', error);
+        setError('Erro ao carregar o ticket.');
+        setOpen(true);
+        setLoading(false); // Carregamento concluído com erro
+      }
+    };
+
+    fetchTicket();
+  }, [id, categories, isAdmin]); // Adicionamos `isAdmin` como dependência para definir o endpoint
+
+  // Carregar as categorias e subcategorias
+  useEffect(() => {
     const fetchCategories = async () => {
       try {
         let allCategories = [];
@@ -60,20 +112,19 @@ function TicketCreate() {
     fetchCategories();
   }, []);
 
+  // Limpar subcategoria selecionada ao mudar a categoria
   useEffect(() => {
-    // Limpar subcategoria selecionada ao mudar a categoria
-    setSubcategoryId('');
+    if (!categoryId) {
+      setSubcategories([]);
+      return;
+    }
 
-    if (categoryId) {
-      // Encontrar as subcategorias associadas à categoria selecionada
-      const selectedCategory = categories.find(
-        (category) => category.id === categoryId
-      );
-      if (selectedCategory) {
-        setSubcategories(selectedCategory.subcategories);
-      } else {
-        setSubcategories([]);
-      }
+    const selectedCategory = categories.find(
+      (category) => category.id === categoryId
+    );
+
+    if (selectedCategory && selectedCategory.subcategories) {
+      setSubcategories(selectedCategory.subcategories);
     } else {
       setSubcategories([]);
     }
@@ -89,8 +140,11 @@ function TicketCreate() {
     }
 
     try {
-      await axios.post(
-        'http://localhost:5228/v1/tickets',
+      // Usar o endpoint correto dependendo da role do usuário
+      await axios.put(
+        isAdmin 
+          ? `http://localhost:5228/v1/admin/${id}` 
+          : `http://localhost:5228/v1/tickets/${id}`, 
         {
           title,
           description,
@@ -107,19 +161,34 @@ function TicketCreate() {
         }
       );
 
-      navigate('/');
+      navigate('/'); // Redirecionar para a listagem de tickets após a edição
     } catch (error) {
-      console.error('Erro ao criar ticket:', error);
-      setError('Falha ao criar o ticket. Tente novamente.');
+      console.error('Erro ao editar ticket:', error);
+      setError('Falha ao editar o ticket. Tente novamente.');
       setOpen(true);
     }
   };
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          height: '100vh',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ padding: 2 }}>
       <Paper sx={{ padding: 2, maxWidth: 600, margin: '0 auto' }}>
         <Typography variant="h5" gutterBottom>
-          Criar Novo Ticket
+          Editar Ticket
         </Typography>
 
         <Collapse in={open}>
@@ -129,7 +198,6 @@ function TicketCreate() {
         </Collapse>
 
         <form onSubmit={handleSubmit}>
-          {/* Categoria */}
           <FormControl fullWidth margin="normal" required>
             <InputLabel id="category-label">Categoria</InputLabel>
             <Select
@@ -146,7 +214,6 @@ function TicketCreate() {
             </Select>
           </FormControl>
 
-          {/* Subcategoria */}
           <FormControl fullWidth margin="normal" required>
             <InputLabel id="subcategory-label">Subcategoria</InputLabel>
             <Select
@@ -174,7 +241,6 @@ function TicketCreate() {
             )}
           </FormControl>
 
-          {/* Prioridade */}
           <FormControl fullWidth margin="normal" required>
             <InputLabel id="priority-label">Prioridade</InputLabel>
             <Select
@@ -189,7 +255,6 @@ function TicketCreate() {
             </Select>
           </FormControl>
 
-          {/* Título */}
           <TextField
             label="Título"
             value={title}
@@ -199,7 +264,6 @@ function TicketCreate() {
             required
           />
 
-          {/* Descrição */}
           <TextField
             label="Descrição"
             value={description}
@@ -218,7 +282,7 @@ function TicketCreate() {
             fullWidth
             sx={{ marginTop: 2 }}
           >
-            Criar Ticket
+            Salvar Alterações
           </Button>
         </form>
       </Paper>
@@ -226,4 +290,4 @@ function TicketCreate() {
   );
 }
 
-export default TicketCreate;
+export default TicketEdit;

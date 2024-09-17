@@ -7,8 +7,9 @@ import {
   Typography,
   Box,
   CircularProgress,
-  Button,
   Container,
+  Grid,
+  Paper,
 } from '@mui/material';
 import LogoutButton from './LogoutButton';
 import TicketList from './TicketList';
@@ -81,12 +82,14 @@ function Dashboard() {
   }
 
   if (user === null) {
-    window.location.href = '/login';
+    navigate('/login');
     return null;
   }
 
   const isAdmin = user.roles && user.roles.includes('Admin');
   const isAtendente = user.roles && user.roles.includes('Atendente');
+  const isUser = user.roles && user.roles.includes('Usuario');
+  const currentUserId = user.email;
 
   return (
     <div>
@@ -109,54 +112,34 @@ function Dashboard() {
 
       {/* Conteúdo Principal */}
       <Container sx={{ marginTop: 8 }}>
-        <Typography variant="h4" gutterBottom>
-          Bem-vindo ao Helpdesk
-        </Typography>
-
-        {isAdmin && (
-          <Typography variant="subtitle1">
-            Você está logado como administrador.
+        <Paper sx={{ padding: 3, mb: 3 }}>
+          <Typography variant="h4">
+            {isAdmin
+              ? 'Painel de Administração'
+              : isAtendente
+              ? 'Painel de Atendente'
+              : 'Meus Tickets'}
           </Typography>
-        )}
-
-        {isAtendente && (
-          <Typography variant="subtitle1">
-            Você está logado como atendente.
+          <Typography variant="subtitle1" sx={{ mt: 1 }}>
+            {isAdmin
+              ? 'Veja e gerencie todos os tickets.'
+              : isAtendente
+              ? 'Gerencie os tickets que estão em andamento.'
+              : 'Visualize e acompanhe seus tickets.'}
           </Typography>
-        )}
+        </Paper>
 
-        <Box sx={{ marginBottom: 2 }}>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => navigate('/tickets/new')}
-            sx={{ marginRight: 2 }}
-          >
-            Novo Ticket
-          </Button>
-
-          {isAdmin && (
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={() => navigate('/categories')}
-              sx={{ marginRight: 2 }}
-            >
-              Gerenciar Categorias
-            </Button>
-          )}
-
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => navigate('/historico')}
-          >
-            Ver Histórico de Tickets
-          </Button>
-        </Box>
-
-        {/* Lista de Tickets */}
-        <TicketList tickets={tickets} isAdmin={isAdmin} isAtendente={isAtendente} />
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <TicketList
+              tickets={tickets}
+              isAdmin={isAdmin}
+              isAtendente={isAtendente}
+              isUser={isUser}
+              currentUserId={currentUserId}
+            />
+          </Grid>
+        </Grid>
       </Container>
     </div>
   );
