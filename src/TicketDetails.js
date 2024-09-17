@@ -37,7 +37,7 @@ function TicketDetails() {
   const [openError, setOpenError] = useState(false);
   const [validationError, setValidationError] = useState('');
   const [successMessage, setSuccessMessage] = useState(false);
-  const [transferEmail, setTransferEmail] = useState(''); // Estado para o e-mail de transferência
+  const [transferEmail, setTransferEmail] = useState('');
 
   const isAdmin = user && user.roles && user.roles.includes('Admin');
   const isAtendente = user && user.roles && user.roles.includes('Atendente');
@@ -109,6 +109,7 @@ function TicketDetails() {
   const handleUpdateTicket = async () => {
     setValidationError('');
 
+    // Verificação de solução ou motivo para status "Resolvido" ou "Cancelado"
     if (status === 3 && !solutionResolved) {
       setValidationError('A solução é obrigatória para resolver o ticket.');
       return;
@@ -126,18 +127,11 @@ function TicketDetails() {
         payload.reasonCanceled = reasonCanceled;
       }
 
-      await axios.put(
-        isAdmin
-          ? `http://localhost:5228/v1/admin/${id}`
-          : `http://localhost:5228/v1/assignment/${id}`,
-        payload,
-        { withCredentials: true }
-      );
+      await axios.put(`http://localhost:5228/v1/assignment/${id}`, payload, {
+        withCredentials: true,
+      });
 
       setSuccessMessage(true);
-      setTimeout(() => {
-        navigate('/'); // Redirecionar para o dashboard após 2 segundos
-      }, 2000);
     } catch (error) {
       console.error('Erro ao atualizar ticket:', error);
       setError('Erro ao atualizar ticket. Tente novamente.');
@@ -160,9 +154,6 @@ function TicketDetails() {
         { withCredentials: true }
       );
       setSuccessMessage(true);
-      setTimeout(() => {
-        navigate('/');
-      }, 2000);
     } catch (error) {
       console.error('Erro ao transferir o ticket:', error);
       setError('Erro ao transferir o ticket. Tente novamente.');
@@ -227,8 +218,7 @@ function TicketDetails() {
           {comments.map((comment) => (
             <Paper key={comment.id} sx={{ padding: 2, marginTop: 2 }}>
               <Typography variant="body2" color="textSecondary">
-                {comment.userId} -{' '}
-                {new Date(comment.createdAt).toLocaleString()}
+                {comment.userId} - {new Date(comment.createdAt).toLocaleString()}
               </Typography>
               <Typography variant="body1">{comment.content}</Typography>
             </Paper>
@@ -271,11 +261,12 @@ function TicketDetails() {
 
         {successMessage && (
           <Alert severity="success" sx={{ mt: 2 }}>
-            Ticket atualizado com sucesso! Redirecionando para a dashboard...
+            Ticket atualizado com sucesso!
           </Alert>
         )}
 
-        {(isAdmin || (isAtendente && (status === 1 || (status === 2 && assignedTo === user.email)))) && (
+        {/* Sempre mostrar o botão de atualizar */}
+        {(isAdmin || isAtendente) && (
           <Box sx={{ marginTop: 4 }}>
             <Typography variant="h6">Atualizar Status do Ticket</Typography>
             <FormControl fullWidth margin="normal">
@@ -329,6 +320,7 @@ function TicketDetails() {
           </Box>
         )}
 
+        {/* Lógica para permitir transferência do ticket */}
         {(isAdmin || (isAtendente && assignedTo === user.email && status === 2)) && (
           <Box sx={{ marginTop: 4 }}>
             <Typography variant="h6">Transferir Ticket</Typography>
