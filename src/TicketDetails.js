@@ -275,7 +275,7 @@ function TicketDetails() {
           </Alert>
         )}
 
-        {(isAdmin || (isAtendente && assignedTo === user.email && status === 2)) && (
+        {(isAdmin || (isAtendente && (status === 1 || (status === 2 && assignedTo === user.email)))) && (
           <Box sx={{ marginTop: 4 }}>
             <Typography variant="h6">Atualizar Status do Ticket</Typography>
             <FormControl fullWidth margin="normal">
