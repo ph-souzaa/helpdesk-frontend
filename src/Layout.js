@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { Box, AppBar, Toolbar, Typography, IconButton, Drawer, List, ListItem, ListItemIcon, ListItemText, CssBaseline, Divider } from '@mui/material';
-import { Menu as MenuIcon, Logout as LogoutIcon, Home as HomeIcon, History as HistoryIcon, Add as AddIcon, Category as CategoryIcon } from '@mui/icons-material';
+import { Menu as MenuIcon, Logout as LogoutIcon, Home as HomeIcon, History as HistoryIcon, Add as AddIcon, Category as CategoryIcon, People as PeopleIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import LogoutButton from './LogoutButton';
 import { AuthContext } from './AuthContext';
@@ -22,7 +22,8 @@ function Layout({ children }) {
     { text: 'Dashboard', icon: <HomeIcon />, path: '/' },
     { text: 'Novo Ticket', icon: <AddIcon />, path: '/tickets/new' },
     { text: 'Histórico de Tickets', icon: <HistoryIcon />, path: '/historico' },
-    { text: 'Gerenciar Categorias', icon: <CategoryIcon />, adminOnly: true, path: '/categories' }
+    { text: 'Gerenciar Categorias', icon: <CategoryIcon />, adminOnly: true, path: '/categories' },
+    { text: 'Gerenciar Usuários', icon: <PeopleIcon />, adminOnly: true, path: '/users' } // Novo item para admins
   ];
 
   return (
@@ -64,7 +65,7 @@ function Layout({ children }) {
         <Divider />
         <List>
           {menuItems.map((item) => {
-            if (item.adminOnly && !user.roles.includes('Admin')) return null;
+            if (item.adminOnly && !user.roles.includes('Admin')) return null; // Apenas admins podem ver esse item
             return (
               <ListItem button key={item.text} onClick={() => navigate(item.path)}>
                 <ListItemIcon>{item.icon}</ListItemIcon>

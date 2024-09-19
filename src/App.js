@@ -13,6 +13,7 @@ import CategoryManagement from './CategoryManagement';
 import Layout from './Layout';
 import theme from './theme'; 
 import TicketEdit from './TicketEdit';
+import UserManagement from './UserManagement';
 
 function App() {
   return (
@@ -95,6 +96,19 @@ function App() {
                       <CategoryManagement />
                     </Layout>
                   )}
+                />
+              }
+            />
+            <Route
+              path="/users"
+              element={
+                <PrivateRoute
+                  element={() => (
+                    <Layout>
+                      <UserManagement />
+                    </Layout>
+                  )}
+                  adminOnly={true}  // Apenas admins podem acessar
                 />
               }
             />

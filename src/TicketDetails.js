@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import {
   Box,
@@ -15,6 +15,9 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Chip,
+  Stack,
+  Grid
 } from '@mui/material';
 import { getStatusLabel, getPriorityLabel } from './utils';
 import { AuthContext } from './AuthContext';
@@ -24,11 +27,8 @@ function TicketDetails() {
   const { user } = useContext(AuthContext);
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
-
   const [assignedTo, setAssignedTo] = useState('');
   const [status, setStatus] = useState('');
   const [solutionResolved, setSolutionResolved] = useState('');
@@ -38,29 +38,36 @@ function TicketDetails() {
   const [validationError, setValidationError] = useState('');
   const [successMessage, setSuccessMessage] = useState(false);
   const [transferEmail, setTransferEmail] = useState('');
-
+  const [attendants, setAttendants] = useState([]);
   const isAdmin = user && user.roles && user.roles.includes('Admin');
   const isAtendente = user && user.roles && user.roles.includes('Atendente');
+
+    // Função para buscar os atendentes
+    const fetchAttendants = async () => {
+      try {
+        const response = await axios.get('http://localhost:5228/v1/identity/users?role=Atendente', {
+          headers: {
+            Accept: '*/*',
+          },
+          withCredentials: true,
+        });
+        setAttendants(response.data); // Atualiza a lista de atendentes
+      } catch (error) {
+        console.error('Erro ao buscar atendentes', error);
+      }
+    };
+  
+    useEffect(() => {
+      fetchAttendants();
+    }, []);
+
 
   useEffect(() => {
     async function fetchTicket() {
       try {
-        let response;
-
-        if (isAdmin) {
-          response = await axios.get(`http://localhost:5228/v1/admin/${id}`, {
-            withCredentials: true,
-          });
-        } else if (isAtendente) {
-          response = await axios.get(`http://localhost:5228/v1/assignment/${id}`, {
-            withCredentials: true,
-          });
-        } else {
-          response = await axios.get(`http://localhost:5228/v1/tickets/${id}`, {
-            withCredentials: true,
-          });
-        }
-
+        const response = await axios.get(`http://localhost:5228/v1/assignment/${id}`, {
+          withCredentials: true,
+        });
         const ticketData = response.data.data || response.data;
         setTicket(ticketData);
         setComments(ticketData.comments || []);
@@ -74,28 +81,20 @@ function TicketDetails() {
         setLoading(false);
       }
     }
-
     fetchTicket();
-  }, [id, isAdmin, isAtendente]);
+  }, [id]);
 
   const handleAddComment = async () => {
     if (!newComment) return;
-
     try {
       await axios.post(
         `http://localhost:5228/v1/tickets/${id}/comments`,
         { content: newComment },
         { withCredentials: true }
       );
-      const response = await axios.get(
-        isAdmin
-          ? `http://localhost:5228/v1/admin/${id}`
-          : isAtendente
-          ? `http://localhost:5228/v1/assignment/${id}`
-          : `http://localhost:5228/v1/tickets/${id}`,
-        { withCredentials: true }
-      );
-
+      const response = await axios.get(`http://localhost:5228/v1/assignment/${id}`, {
+        withCredentials: true,
+      });
       const ticketData = response.data.data || response.data;
       setComments(ticketData.comments || []);
       setNewComment('');
@@ -108,8 +107,6 @@ function TicketDetails() {
 
   const handleUpdateTicket = async () => {
     setValidationError('');
-
-    // Verificação de solução ou motivo para status "Resolvido" ou "Cancelado"
     if (status === 3 && !solutionResolved) {
       setValidationError('A solução é obrigatória para resolver o ticket.');
       return;
@@ -117,20 +114,16 @@ function TicketDetails() {
       setValidationError('O motivo do cancelamento é obrigatório.');
       return;
     }
-
     try {
       const payload = { status };
-
       if (status === 3) {
         payload.solutionResolved = solutionResolved;
       } else if (status === 4) {
         payload.reasonCanceled = reasonCanceled;
       }
-
       await axios.put(`http://localhost:5228/v1/assignment/${id}`, payload, {
         withCredentials: true,
       });
-
       setSuccessMessage(true);
     } catch (error) {
       console.error('Erro ao atualizar ticket:', error);
@@ -144,12 +137,9 @@ function TicketDetails() {
       setValidationError('O e-mail de transferência é obrigatório.');
       return;
     }
-
     try {
       await axios.put(
-        isAdmin
-          ? `http://localhost:5228/v1/admin/transfer/${id}`
-          : `http://localhost:5228/v1/assignment/transfer/${id}`,
+        `http://localhost:5228/v1/assignment/transfer/${id}`,
         { assignmentEmail: transferEmail },
         { withCredentials: true }
       );
@@ -181,42 +171,78 @@ function TicketDetails() {
   }
 
   return (
-    <Box sx={{ padding: 2 }}>
-      <Paper sx={{ padding: 2 }}>
-        <Typography variant="h5" gutterBottom>
-          Ticket #{ticket.id}: {ticket.title}
+    <Box sx={{ padding: 4, backgroundColor: '#f5f5f5', borderRadius: 2 }}>
+      <Paper sx={{ padding: 3, boxShadow: 3 }}>
+        <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: '#1976d2', textAlign: 'center' }}>
+          Detalhes do Ticket #{ticket.id}
         </Typography>
-        <Divider sx={{ marginBottom: 2 }} />
+        <Divider sx={{ marginBottom: 3 }} />
 
-        <Typography variant="body1">
-          <strong>Status:</strong> {getStatusLabel(ticket.status)}
-        </Typography>
-        <Typography variant="body1">
-          <strong>Prioridade:</strong> {getPriorityLabel(ticket.priority)}
-        </Typography>
-        <Typography variant="body1">
-          <strong>Categoria:</strong> {ticket.categoryName}
-        </Typography>
-        <Typography variant="body1">
-          <strong>Subcategoria:</strong> {ticket.subcategoryName}
-        </Typography>
-        <Typography variant="body1">
-          <strong>Descrição:</strong> {ticket.description}
-        </Typography>
-        <Typography variant="body1">
-          <strong>Criado por:</strong> {ticket.userId}
-        </Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <Typography variant="body1">
+              <Chip label={`Status: ${getStatusLabel(ticket.status)}`} color="primary" />
+            </Typography>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Typography variant="body1">
+              <Chip label={`Prioridade: ${getPriorityLabel(ticket.priority)}`} color="warning" />
+            </Typography>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Typography variant="body1">
+              <Chip label={`Categoria: ${ticket.categoryName}`} color="secondary" />
+            </Typography>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Typography variant="body1">
+              <Chip label={`Subcategoria: ${ticket.subcategoryName}`} />
+            </Typography>
+          </Grid>
+          <Grid item xs={12}>
+          <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', marginRight: 2 }}>
+              Descrição:
+            </Typography>
+            <Typography variant="body1" sx={{ fontStyle: 'italic', color: '#616161' }}>
+              {ticket.description}
+            </Typography>
+          </Box>
+        </Grid>
+
+        <Grid item xs={12} sm={6}>
+          <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', marginRight: 1 }}>
+              Criado por:
+            </Typography>
+            <Typography variant="body1" sx={{ color: '#424242' }}>
+              <strong>{ticket.userId}</strong>
+            </Typography>
+          </Box>
+        </Grid>
+
         {ticket.assignedTo && (
-          <Typography variant="body1">
-            <strong>Atribuído a:</strong> {ticket.assignedTo}
-          </Typography>
+          <Grid item xs={12} sm={6}>
+            <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: 'bold', marginRight: 1 }}>
+                Atribuído a:
+              </Typography>
+              <Typography variant="body1" sx={{ color: '#424242' }}>
+                <strong>{ticket.assignedTo}</strong>
+              </Typography>
+            </Box>
+          </Grid>
         )}
 
+        </Grid>
+
         <Box sx={{ marginTop: 4 }}>
-          <Typography variant="h6">Comentários</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 'bold', marginBottom: 2 }}>
+            Comentários
+          </Typography>
           {comments.length === 0 && <Typography>Nenhum comentário.</Typography>}
           {comments.map((comment) => (
-            <Paper key={comment.id} sx={{ padding: 2, marginTop: 2 }}>
+            <Paper key={comment.id} sx={{ padding: 2, marginTop: 2, boxShadow: 2 }}>
               <Typography variant="body2" color="textSecondary">
                 {comment.userId} - {new Date(comment.createdAt).toLocaleString()}
               </Typography>
@@ -232,23 +258,15 @@ function TicketDetails() {
             multiline
             rows={3}
             margin="normal"
+            variant="outlined"
           />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleAddComment}
-            disabled={!newComment}
-          >
+          <Button variant="contained" color="primary" onClick={handleAddComment} disabled={!newComment}>
             Adicionar Comentário
           </Button>
         </Box>
 
         <Collapse in={openError}>
-          <Alert
-            severity="error"
-            sx={{ mt: 2 }}
-            onClose={() => setOpenError(false)}
-          >
+          <Alert severity="error" sx={{ mt: 2 }} onClose={() => setOpenError(false)}>
             {error}
           </Alert>
         </Collapse>
@@ -265,7 +283,6 @@ function TicketDetails() {
           </Alert>
         )}
 
-        {/* Sempre mostrar o botão de atualizar */}
         {(isAdmin || isAtendente) && (
           <Box sx={{ marginTop: 4 }}>
             <Typography variant="h6">Atualizar Status do Ticket</Typography>
@@ -294,6 +311,7 @@ function TicketDetails() {
                 multiline
                 rows={3}
                 required
+                variant="outlined"
               />
             )}
 
@@ -307,36 +325,41 @@ function TicketDetails() {
                 multiline
                 rows={3}
                 required
+                variant="outlined"
               />
             )}
 
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleUpdateTicket}
-            >
+            <Button variant="contained" color="primary" onClick={handleUpdateTicket}>
               Atualizar Ticket
             </Button>
           </Box>
         )}
 
-        {/* Lógica para permitir transferência do ticket */}
         {(isAdmin || (isAtendente && assignedTo === user.email && status === 2)) && (
           <Box sx={{ marginTop: 4 }}>
             <Typography variant="h6">Transferir Ticket</Typography>
-            <TextField
-              label="E-mail do novo atendente"
-              value={transferEmail}
-              onChange={(e) => setTransferEmail(e.target.value)}
-              fullWidth
-              margin="normal"
-              required
-            />
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={handleTransferTicket}
-            >
+
+            {/* Select para listar atendentes */}
+            <FormControl fullWidth margin="normal">
+              <InputLabel id="select-attendant-label">Selecionar Atendente</InputLabel>
+              <Select
+                labelId="select-attendant-label"
+                value={transferEmail}
+                onChange={(e) => setTransferEmail(e.target.value)}
+                required
+              >
+                <MenuItem value="">
+                  <em>Selecione um Atendente</em>
+                </MenuItem>
+                {attendants.map((attendant) => (
+                  <MenuItem key={attendant.email} value={attendant.email}>
+                    {attendant.name} ({attendant.email})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Button variant="contained" color="secondary" onClick={handleTransferTicket}>
               Transferir Ticket
             </Button>
           </Box>
