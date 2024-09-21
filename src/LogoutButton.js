@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
-import { Button } from '@mui/material';
+import { IconButton } from '@mui/material';  // Remova a importação incorreta de Logout aqui
+import LogoutIcon from '@mui/icons-material/Logout';  // Corrija a importação do ícone de logout
 import axios from 'axios';
 import { AuthContext } from './AuthContext';
 
@@ -12,7 +13,7 @@ function LogoutButton() {
         withCredentials: true,
       });
       setUser(null);
-      window.location.href = '/login';
+      window.location.href = '/login'; // Redireciona para a página de login após logout
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
       alert('Erro ao fazer logout. Tente novamente.');
@@ -20,9 +21,9 @@ function LogoutButton() {
   };
 
   return (
-    <Button color="inherit" onClick={handleLogout}>
-      Sair
-    </Button>
+    <IconButton color="inherit" onClick={handleLogout}>
+      <LogoutIcon />  {/* Usa o ícone de logout corretamente importado */}
+    </IconButton>
   );
 }
 

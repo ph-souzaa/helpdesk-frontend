@@ -1,89 +1,183 @@
 import React, { useState, useContext } from 'react';
-import { Box, AppBar, Toolbar, Typography, IconButton, Drawer, List, ListItem, ListItemIcon, ListItemText, CssBaseline, Divider } from '@mui/material';
-import { Menu as MenuIcon, Logout as LogoutIcon, Home as HomeIcon, History as HistoryIcon, Add as AddIcon, Category as CategoryIcon, People as PeopleIcon } from '@mui/icons-material';
+import { styled, useTheme, ThemeProvider, createTheme } from '@mui/material/styles';
+import {
+  Box, AppBar as MuiAppBar, Toolbar, Typography, IconButton, Drawer as MuiDrawer, List, ListItem, ListItemIcon, ListItemText, CssBaseline, Divider, Tooltip
+} from '@mui/material';
+import { Menu as MenuIcon, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, Home as HomeIcon, History as HistoryIcon, Add as AddIcon, Category as CategoryIcon, People as PeopleIcon, Brightness4 as Brightness4Icon, Brightness7 as Brightness7Icon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import LogoutButton from './LogoutButton';
 import { AuthContext } from './AuthContext';
-import { useMediaQuery, useTheme } from '@mui/material';
+import LogoutButton from './LogoutButton';
+
+const drawerWidth = 240;
+
+// Estilos para o Drawer quando está aberto
+const openedMixin = (theme) => ({
+  width: drawerWidth,
+  transition: theme.transitions.create('width', {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.enteringScreen,
+  }),
+  overflowX: 'hidden',
+});
+
+// Estilos para o Drawer quando está fechado
+const closedMixin = (theme) => ({
+  transition: theme.transitions.create('width', {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen,
+  }),
+  overflowX: 'hidden',
+  width: `calc(${theme.spacing(7)} + 1px)`,
+  [theme.breakpoints.up('sm')]: {
+    width: `calc(${theme.spacing(8)} + 1px)`,
+  },
+});
+
+// Customização do AppBar para interagir com o Drawer
+const AppBar = styled(MuiAppBar, {
+  shouldForwardProp: (prop) => prop !== 'open',
+})(({ theme, open }) => ({
+  zIndex: theme.zIndex.drawer + 1,
+  transition: theme.transitions.create(['width', 'margin'], {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen,
+  }),
+  ...(open && {
+    marginLeft: drawerWidth,
+    width: `calc(100% - ${drawerWidth}px)`,
+    transition: theme.transitions.create(['width', 'margin'], {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+  }),
+}));
+
+// Customização do Drawer
+const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' })(
+  ({ theme, open }) => ({
+    width: drawerWidth,
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
+    boxSizing: 'border-box',
+    ...(open && {
+      ...openedMixin(theme),
+      '& .MuiDrawer-paper': openedMixin(theme),
+    }),
+    ...(!open && {
+      ...closedMixin(theme),
+      '& .MuiDrawer-paper': closedMixin(theme),
+    }),
+  })
+);
+
+// Estilo para o Header do Drawer
+const DrawerHeader = styled('div')(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  padding: theme.spacing(0, 1),
+  ...theme.mixins.toolbar,
+}));
 
 function Layout({ children }) {
-  const [drawerOpen, setDrawerOpen] = useState(true); // Drawer sempre aberto em telas grandes
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
-  
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm')); // Detecta se é um dispositivo móvel
+
+  const [open, setOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(false); // Estado para troca de tema
 
   const toggleDrawer = () => {
-    setDrawerOpen(!drawerOpen);
+    setOpen(!open);
   };
+
+  // Alterna entre o tema claro e escuro
+  const toggleTheme = () => {
+    setDarkMode(!darkMode);
+  };
+
+  // Definição do tema dinâmico
+  const appliedTheme = createTheme({
+    palette: {
+      mode: darkMode ? 'dark' : 'light',
+    },
+  });
 
   const menuItems = [
     { text: 'Dashboard', icon: <HomeIcon />, path: '/' },
     { text: 'Novo Ticket', icon: <AddIcon />, path: '/tickets/new' },
     { text: 'Histórico de Tickets', icon: <HistoryIcon />, path: '/historico' },
     { text: 'Gerenciar Categorias', icon: <CategoryIcon />, adminOnly: true, path: '/categories' },
-    { text: 'Gerenciar Usuários', icon: <PeopleIcon />, adminOnly: true, path: '/users' } // Novo item para admins
+    { text: 'Gerenciar Usuários', icon: <PeopleIcon />, adminOnly: true, path: '/users' }
   ];
 
-  console.log(user);
-
   return (
-    <Box sx={{ display: 'flex' }}>
-      <CssBaseline />
-      {/* Barra de Navegação Superior */}
-      <AppBar position="fixed" sx={{ zIndex: 1201 }}>
-        <Toolbar>
-          {isMobile && ( // Só mostra o botão de menu em dispositivos móveis
-            <IconButton edge="start" color="inherit" aria-label="menu" onClick={toggleDrawer} sx={{ marginRight: 2 }}>
+    <ThemeProvider theme={appliedTheme}>
+      <Box sx={{ display: 'flex' }}>
+        <CssBaseline />
+        {/* AppBar */}
+        <AppBar position="fixed" open={open}>
+          <Toolbar>
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              onClick={toggleDrawer}
+              edge="start"
+              sx={{
+                marginRight: 5,
+                ...(open && { display: 'none' }),
+              }}
+            >
               <MenuIcon />
             </IconButton>
-          )}
-          <Typography variant="h6" sx={{ flexGrow: 1, cursor: 'pointer' }} onClick={() => navigate('/')}>
-            Helpdesk
-          </Typography>
-          <Typography variant="body1" sx={{ marginRight: 2 }}>
-            {user.email}
-          </Typography>
-          <LogoutButton />
-        </Toolbar>
-      </AppBar>
+            <Typography variant="h6" noWrap sx={{ flexGrow: 1, cursor: 'pointer' }} onClick={() => navigate('/')}>
+              Helpdesk
+            </Typography>
 
-      {/* Drawer */}
-      <Drawer
-        variant={isMobile ? 'temporary' : 'permanent'} 
-        open={isMobile ? drawerOpen : true} 
-        onClose={isMobile ? toggleDrawer : undefined} 
-        sx={{
-          width: isMobile ? (drawerOpen ? 240 : 0) : 240, 
-          flexShrink: 0,
-          '& .MuiDrawer-paper': {
-            width: 240,
-            boxSizing: 'border-box',
-          },
-        }}
-      >
-        <Toolbar />
-        <Divider />
-        <List>
-          {menuItems.map((item) => {
-            if (item.adminOnly && !user.roles.includes('Admin')) return null; // Apenas admins podem ver esse item
-            return (
-              <ListItem button key={item.text} onClick={() => navigate(item.path)}>
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.text} />
-              </ListItem>
-            );
-          })}
-        </List>
-      </Drawer>
+            <Typography variant="body1" sx={{ marginRight: 2 }}>
+              Olá, {user.name}
+            </Typography>
+            {/* Botão de troca de tema */}
+            <IconButton color="inherit" onClick={toggleTheme} sx={{ marginRight: 2 }}>
+              {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+            </IconButton>
+              
+            <LogoutButton />
+          </Toolbar>
+        </AppBar>
 
-      {/* Conteúdo Principal */}
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-        <Toolbar />
-        {children}
+        {/* Drawer */}
+        <Drawer variant="permanent" open={open}>
+          <DrawerHeader>
+            <IconButton onClick={toggleDrawer}>
+              {theme.direction === 'rtl' ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+            </IconButton>
+          </DrawerHeader>
+          <Divider />
+          <List>
+            {menuItems.map((item) => {
+              // Verifica se o item é apenas para admin
+              if (item.adminOnly && !user?.roles?.includes('Admin')) return null;
+
+              return (
+                <Tooltip title={item.text} placement="right" disableHoverListener={open} key={item.text}>
+                  <ListItem button onClick={() => navigate(item.path)}>
+                    <ListItemIcon>{item.icon}</ListItemIcon>
+                    <ListItemText primary={item.text} sx={{ opacity: open ? 1 : 0 }} />
+                  </ListItem>
+                </Tooltip>
+              );
+            })}
+          </List>
+        </Drawer>
+
+        {/* Conteúdo Principal */}
+        <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+          <DrawerHeader />
+          {children}
+        </Box>
       </Box>
-    </Box>
+    </ThemeProvider>
   );
 }
 

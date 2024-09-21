@@ -17,6 +17,7 @@ import {
   Select,
   InputLabel,
   FormControl,
+  Divider,
 } from '@mui/material';
 import { Delete, Edit } from '@mui/icons-material';
 
@@ -171,14 +172,16 @@ function CategoryManagement() {
   }
 
   return (
-    <Box sx={{ padding: 4 }}>
-      <Typography variant="h4" gutterBottom>
+    <Box sx={{ padding: 4, maxWidth: '1200px', margin: 'auto' }}>
+      <Typography variant="h4" gutterBottom textAlign="center">
         Gerenciamento de Categorias e Subcategorias
       </Typography>
 
       {/* Formulário de Criação de Categoria */}
       <Paper sx={{ padding: 3, mb: 4 }}>
-        <Typography variant="h6">Criar Nova Categoria</Typography>
+        <Typography variant="h6" gutterBottom>
+          Criar Nova Categoria
+        </Typography>
         <TextField
           label="Nome da Categoria"
           value={newCategory}
@@ -193,7 +196,9 @@ function CategoryManagement() {
 
       {/* Formulário de Criação de Subcategoria */}
       <Paper sx={{ padding: 3, mb: 4 }}>
-        <Typography variant="h6">Criar Nova Subcategoria</Typography>
+        <Typography variant="h6" gutterBottom>
+          Criar Nova Subcategoria
+        </Typography>
         <TextField
           label="Nome da Subcategoria"
           value={newSubcategory}
@@ -234,9 +239,13 @@ function CategoryManagement() {
         </Button>
       </Paper>
 
+      <Divider />
+
       {/* Listagem de Categorias */}
-      <Typography variant="h6">Categorias</Typography>
-      <Table>
+      <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>
+        Categorias
+      </Typography>
+      <Table sx={{ mb: 4 }}>
         <TableHead>
           <TableRow>
             <TableCell>Nome</TableCell>
@@ -251,6 +260,7 @@ function CategoryManagement() {
                   <TextField
                     value={editingCategory}
                     onChange={(e) => setEditingCategory(e.target.value)}
+                    fullWidth
                   />
                 ) : (
                   category.name
@@ -270,7 +280,7 @@ function CategoryManagement() {
       </Table>
 
       {/* Listagem de Subcategorias */}
-      <Typography variant="h6" sx={{ mt: 4 }}>
+      <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>
         Subcategorias
       </Typography>
       <Table>
@@ -289,6 +299,7 @@ function CategoryManagement() {
                   <TextField
                     value={editingSubcategory}
                     onChange={(e) => setEditingSubcategory(e.target.value)}
+                    fullWidth
                   />
                 ) : (
                   subcategory.name

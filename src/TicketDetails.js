@@ -17,7 +17,7 @@ import {
   MenuItem,
   Chip,
   Stack,
-  Grid
+  Grid,
 } from '@mui/material';
 import { getStatusLabel, getPriorityLabel } from './utils';
 import { AuthContext } from './AuthContext';
@@ -42,25 +42,23 @@ function TicketDetails() {
   const isAdmin = user && user.roles && user.roles.includes('Admin');
   const isAtendente = user && user.roles && user.roles.includes('Atendente');
 
-    // Função para buscar os atendentes
-    const fetchAttendants = async () => {
-      try {
-        const response = await axios.get('http://localhost:5228/v1/identity/users?role=Atendente', {
-          headers: {
-            Accept: '*/*',
-          },
-          withCredentials: true,
-        });
-        setAttendants(response.data); // Atualiza a lista de atendentes
-      } catch (error) {
-        console.error('Erro ao buscar atendentes', error);
-      }
-    };
-  
-    useEffect(() => {
-      fetchAttendants();
-    }, []);
+  const fetchAttendants = async () => {
+    try {
+      const response = await axios.get('http://localhost:5228/v1/identity/users?role=Atendente', {
+        headers: {
+          Accept: '*/*',
+        },
+        withCredentials: true,
+      });
+      setAttendants(response.data); // Atualiza a lista de atendentes
+    } catch (error) {
+      console.error('Erro ao buscar atendentes', error);
+    }
+  };
 
+  useEffect(() => {
+    fetchAttendants();
+  }, []);
 
   useEffect(() => {
     async function fetchTicket() {
@@ -171,70 +169,71 @@ function TicketDetails() {
   }
 
   return (
-    <Box sx={{ padding: 4, backgroundColor: '#f5f5f5', borderRadius: 2 }}>
-      <Paper sx={{ padding: 3, boxShadow: 3 }}>
-        <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: '#1976d2', textAlign: 'center' }}>
+    <Box sx={{ padding: 4 }}>
+      <Paper sx={{ padding: 3, boxShadow: 3, borderRadius: 2 }}>
+        <Typography
+          variant="h4"
+          gutterBottom
+          sx={{ fontWeight: 'bold', color: '#1976d2', textAlign: 'center' }}
+        >
           Detalhes do Ticket #{ticket.id}
         </Typography>
         <Divider sx={{ marginBottom: 3 }} />
 
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6}>
-            <Typography variant="body1">
-              <Chip label={`Status: ${getStatusLabel(ticket.status)}`} color="primary" />
-            </Typography>
+            <Chip label={`Status: ${getStatusLabel(ticket.status)}`} color="primary" />
           </Grid>
           <Grid item xs={12} sm={6}>
-            <Typography variant="body1">
-              <Chip label={`Prioridade: ${getPriorityLabel(ticket.priority)}`} color="warning" />
-            </Typography>
+            <Chip label={`Prioridade: ${getPriorityLabel(ticket.priority)}`} color="warning" />
           </Grid>
           <Grid item xs={12} sm={6}>
-            <Typography variant="body1">
-              <Chip label={`Categoria: ${ticket.categoryName}`} color="secondary" />
-            </Typography>
+            <Chip label={`Categoria: ${ticket.categoryName}`} color="secondary" />
           </Grid>
           <Grid item xs={12} sm={6}>
-            <Typography variant="body1">
-              <Chip label={`Subcategoria: ${ticket.subcategoryName}`} />
-            </Typography>
+            <Chip label={`Subcategoria: ${ticket.subcategoryName}`} />
           </Grid>
+
           <Grid item xs={12}>
-          <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 'bold', marginRight: 2 }}>
-              Descrição:
-            </Typography>
-            <Typography variant="body1" sx={{ fontStyle: 'italic', color: '#616161' }}>
-              {ticket.description}
-            </Typography>
-          </Box>
-        </Grid>
-
-        <Grid item xs={12} sm={6}>
-          <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 'bold', marginRight: 1 }}>
-              Criado por:
-            </Typography>
-            <Typography variant="body1" sx={{ color: '#424242' }}>
-              <strong>{ticket.userId}</strong>
-            </Typography>
-          </Box>
-        </Grid>
-
-        {ticket.assignedTo && (
-          <Grid item xs={12} sm={6}>
             <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: 2 }}>
-              <Typography variant="h6" sx={{ fontWeight: 'bold', marginRight: 1 }}>
-                Atribuído a:
+              <Typography variant="h6" sx={{ fontWeight: 'bold', marginRight: 2 }}>
+                Descrição:
               </Typography>
-              <Typography variant="body1" sx={{ color: '#424242' }}>
-                <strong>{ticket.assignedTo}</strong>
+              <Typography
+                variant="body1"
+                sx={{ fontStyle: 'italic', color: '#616161', wordBreak: 'break-word', overflowWrap: 'break-word' }}
+              >
+                {ticket.description}
               </Typography>
             </Box>
           </Grid>
-        )}
 
+          <Grid item xs={12} sm={6}>
+            <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: 'bold', marginRight: 1 }}>
+                Criado por:
+              </Typography>
+              <Typography variant="body1" sx={{ color: '#424242', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                <strong>{ticket.userId}</strong>
+              </Typography>
+            </Box>
+          </Grid>
+
+          {ticket.assignedTo && (
+            <Grid item xs={12} sm={6}>
+              <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', marginRight: 1 }}>
+                  Atribuído a:
+                </Typography>
+                <Typography variant="body1" sx={{ color: '#424242', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                  <strong>{ticket.assignedTo}</strong>
+                </Typography>
+              </Box>
+            </Grid>
+          )}
         </Grid>
+
+        <Divider sx={{ marginTop: 3 }} />
 
         <Box sx={{ marginTop: 4 }}>
           <Typography variant="h6" sx={{ fontWeight: 'bold', marginBottom: 2 }}>
@@ -242,7 +241,16 @@ function TicketDetails() {
           </Typography>
           {comments.length === 0 && <Typography>Nenhum comentário.</Typography>}
           {comments.map((comment) => (
-            <Paper key={comment.id} sx={{ padding: 2, marginTop: 2, boxShadow: 2 }}>
+            <Paper
+              key={comment.id}
+              sx={{
+                padding: 2,
+                marginTop: 2,
+                boxShadow: 2,
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+              }}
+            >
               <Typography variant="body2" color="textSecondary">
                 {comment.userId} - {new Date(comment.createdAt).toLocaleString()}
               </Typography>
@@ -259,6 +267,7 @@ function TicketDetails() {
             rows={3}
             margin="normal"
             variant="outlined"
+            sx={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
           />
           <Button variant="contained" color="primary" onClick={handleAddComment} disabled={!newComment}>
             Adicionar Comentário
@@ -339,7 +348,6 @@ function TicketDetails() {
           <Box sx={{ marginTop: 4 }}>
             <Typography variant="h6">Transferir Ticket</Typography>
 
-            {/* Select para listar atendentes */}
             <FormControl fullWidth margin="normal">
               <InputLabel id="select-attendant-label">Selecionar Atendente</InputLabel>
               <Select
