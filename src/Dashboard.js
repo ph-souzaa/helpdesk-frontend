@@ -37,6 +37,8 @@ function Dashboard() {
 
   const [statusData, setStatusData] = useState([]);
   const [priorityData, setPriorityData] = useState([]);
+  const [monthlyData, setMonthlyData] = useState([]);
+  const [categoryData, setCategoryData] = useState([]);
 
   useEffect(() => {
     const fetchTickets = async () => {
@@ -84,38 +86,88 @@ function Dashboard() {
     };
 
     const processDataForCharts = (tickets) => {
+      // Mapeamento de status (1 = Aberto, 2 = Em Andamento, 3 = Resolvido, 4 = Cancelado)
+      const statusMap = { 1: 'Aberto', 2: 'Em Andamento', 3: 'Resolvido', 4: 'Cancelado' };
+
       // Contagem de tickets por status
       const statusCount = tickets.reduce(
         (acc, ticket) => {
-          acc[ticket.status] = (acc[ticket.status] || 0) + 1;
+          const statusName = statusMap[ticket.status] || 'Desconhecido';
+          acc[statusName] = (acc[statusName] || 0) + 1;
           return acc;
         },
-        { open: 0, closed: 0, resolved: 0 }
+        {}
       );
 
-      const statusDataFormatted = [
-        { name: 'Aberto', value: statusCount.open || 0 },
-        { name: 'Fechado', value: statusCount.closed || 0 },
-        { name: 'Resolvido', value: statusCount.resolved || 0 },
-      ];
+      const statusDataFormatted = Object.keys(statusCount).map((status) => ({
+        name: status,
+        value: statusCount[status],
+      }));
+
+      // Mapeamento de prioridade (assumindo que 1 = Baixa, 2 = Média, 3 = Alta)
+      const priorityMap = { 1: 'Baixa', 2: 'Média', 3: 'Alta' };
 
       // Contagem de tickets por prioridade
       const priorityCount = tickets.reduce(
         (acc, ticket) => {
-          acc[ticket.priority] = (acc[ticket.priority] || 0) + 1;
+          const priorityName = priorityMap[ticket.priority] || 'Desconhecida';
+          acc[priorityName] = (acc[priorityName] || 0) + 1;
           return acc;
         },
-        { low: 0, medium: 0, high: 0 }
+        {}
       );
 
-      const priorityDataFormatted = [
-        { name: 'Baixa', value: priorityCount.low || 0 },
-        { name: 'Média', value: priorityCount.medium || 0 },
-        { name: 'Alta', value: priorityCount.high || 0 },
-      ];
+      const priorityDataFormatted = Object.keys(priorityCount).map((priority) => ({
+        name: priority,
+        value: priorityCount[priority],
+      }));
+
+      // Contagem de tickets por mês
+      const monthlyCount = tickets.reduce((acc, ticket) => {
+        const month = new Date(ticket.createdAt).getMonth() + 1; // Mês da criação do ticket
+        acc[month] = (acc[month] || 0) + 1;
+        return acc;
+      }, {});
+
+      const monthlyDataFormatted = Object.keys(monthlyCount).map((month) => ({
+        name: `Mês ${month}`,
+        value: monthlyCount[month],
+      }));
+
+      // Contagem de tickets por categoria
+      const categoryCount = tickets.reduce((acc, ticket) => {
+        const categoryName = ticket.categoryName || 'Sem Categoria';
+        const subcategoryName = ticket.subcategoryName || 'Sem Subcategoria';
+        
+        if (!acc[categoryName]) {
+          acc[categoryName] = {
+            categoryName: categoryName,
+            subcategories: [],
+            count: 0,
+          };
+        }
+
+        acc[categoryName].subcategories.push(subcategoryName);
+        acc[categoryName].count += 1;
+        return acc;
+      }, {});
+
+      const categoryDataFormatted = Object.keys(categoryCount).map((category) => ({
+        name: category,
+        value: categoryCount[category].count,
+        subcategories: categoryCount[category].subcategories,
+      }));
+
+      // Log dos dados formatados para conferência
+      console.log('Status Data:', statusDataFormatted);
+      console.log('Priority Data:', priorityDataFormatted);
+      console.log('Monthly Data:', monthlyDataFormatted);
+      console.log('Category Data:', categoryDataFormatted);
 
       setStatusData(statusDataFormatted);
       setPriorityData(priorityDataFormatted);
+      setMonthlyData(monthlyDataFormatted);
+      setCategoryData(categoryDataFormatted);
     };
 
     fetchTickets();
@@ -185,45 +237,85 @@ function Dashboard() {
         </Paper>
 
         <Grid container spacing={3}>
-          {/* Gráfico de Barras - Tickets por Status */}
-          <Grid item xs={12} md={6}>
-            <Paper sx={{ padding: 3 }}>
-              <Typography variant="h6">Tickets por Status</Typography>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={statusData}>
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="value" fill="#8884d8" />
-                </BarChart>
-              </ResponsiveContainer>
-            </Paper>
-          </Grid>
+          {/* Renderizar os gráficos apenas para Admin */}
+          {isAdmin && (
+            <>
+              {/* Gráfico de Barras - Tickets por Status */}
+              <Grid item xs={12} md={6}>
+                <Paper sx={{ padding: 3 }}>
+                  <Typography variant="h6">Tickets por Status</Typography>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={statusData}>
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="value" fill="#8884d8" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Paper>
+              </Grid>
 
-          {/* Gráfico de Pizza - Tickets por Prioridade */}
-          <Grid item xs={12} md={6}>
-            <Paper sx={{ padding: 3 }}>
-              <Typography variant="h6">Tickets por Prioridade</Typography>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={priorityData}
-                    dataKey="value"
-                    nameKey="name"
-                    outerRadius={100}
-                    fill="#8884d8"
-                  >
-                    {priorityData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </Paper>
-          </Grid>
+              {/* Gráfico de Pizza - Tickets por Prioridade */}
+              <Grid item xs={12} md={6}>
+                <Paper sx={{ padding: 3 }}>
+                  <Typography variant="h6">Tickets por Prioridade</Typography>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={priorityData}
+                        dataKey="value"
+                        nameKey="name"
+                        outerRadius={100}
+                        fill="#8884d8"
+                      >
+                        {priorityData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Paper>
+              </Grid>
+
+              {/* Gráfico de Barras - Tickets por Mês */}
+              <Grid item xs={12} md={6}>
+                <Paper sx={{ padding: 3 }}>
+                  <Typography variant="h6">Tickets por Mês</Typography>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={monthlyData}>
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="value" fill="#82ca9d" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Paper>
+              </Grid>
+
+              {/* Gráfico de Barras - Tickets por Categoria */}
+              <Grid item xs={12} md={6}>
+                <Paper sx={{ padding: 3 }}>
+                  <Typography variant="h6">Tickets por Categoria</Typography>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={categoryData}>
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip formatter={(value, name, props) => {
+                        const { payload } = props;
+                        return [value, `Subcategorias: ${payload.subcategories.join(', ')}`];
+                      }} />
+                      <Legend />
+                      <Bar dataKey="value" fill="#FFBB28" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Paper>
+              </Grid>
+            </>
+          )}
 
           {/* Lista de Tickets */}
           <Grid item xs={12}>

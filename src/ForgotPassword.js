@@ -1,49 +1,35 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import {
   TextField,
   Button,
   Box,
   Typography,
-  Link,
   Paper,
   Alert,
   Collapse,
 } from '@mui/material';
-import { useNavigate, Navigate } from 'react-router-dom';
-import { AuthContext } from './AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Fade } from '@mui/material';
 import { CircularProgress } from '@mui/material';
 
-function Login() {
-  const { user, setUser } = useContext(AuthContext);
+function ForgotPassword() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-
+  const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [open, setOpen] = useState(false);
 
-  if (user) {
-    return <Navigate to="/" />;
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setLoading(true);
 
     try {
       await axios.post(
-        'http://localhost:5228/v1/identity/login?useCookies=true',
+        'http://localhost:5228/v1/identity/forgot-password',
+        { email },
         {
-          email,
-          password,
-        },
-        {
-          withCredentials: true,
           headers: {
             'Content-Type': 'application/json',
             Accept: 'application/json',
@@ -51,21 +37,11 @@ function Login() {
         }
       );
 
-      const response = await axios.get('http://localhost:5228/v1/identity/me', {
-        withCredentials: true,
-      });
-      setUser(response.data);
+      setSuccess('Se um usuário com esse email existir, um link de redefinição de senha será enviado.');
       setLoading(false);
-      navigate('/');
+      setTimeout(() => navigate('/login'), 5000); // Redireciona para a tela de login após 5 segundos
     } catch (error) {
-      console.error('Erro no login:', error);
-
-      let errorMessage = 'Falha no login. Verifique suas credenciais.';
-      if (error.response && error.response.data) {
-        errorMessage = error.response.data.message || errorMessage;
-      }
-
-      setError(errorMessage);
+      setError('Ocorreu um erro ao tentar enviar o link de redefinição de senha.');
       setOpen(true);
       setLoading(false);
     }
@@ -84,8 +60,14 @@ function Login() {
       <Fade in={true} timeout={500}>
         <Paper elevation={3} sx={{ padding: 4, maxWidth: 400, width: '100%' }}>
           <Typography variant="h5" component="h1" gutterBottom align="center">
-            Login
+            Esqueceu sua senha?
           </Typography>
+
+          {success && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {success}
+            </Alert>
+          )}
 
           <Collapse in={open}>
             <Alert
@@ -107,15 +89,6 @@ function Login() {
               margin="normal"
               required
             />
-            <TextField
-              label="Senha"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              fullWidth
-              margin="normal"
-              required
-            />
             <Button
               type="submit"
               variant="contained"
@@ -124,26 +97,13 @@ function Login() {
               sx={{ marginTop: 2 }}
               disabled={loading}
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Entrar'}
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Enviar'}
             </Button>
           </form>
-
-          <Typography variant="body2" align="center" sx={{ marginTop: 2 }}>
-            Não tem uma conta?{' '}
-            <Link href="/register" underline="hover">
-              Registre-se
-            </Link>
-          </Typography>
-
-          <Typography variant="body2" align="center" sx={{ marginTop: 1 }}>
-            <Link href="/forgot-password" underline="hover">
-              Esqueceu sua senha?
-            </Link>
-          </Typography>
         </Paper>
       </Fade>
     </Box>
   );
 }
 
-export default Login;
+export default ForgotPassword;

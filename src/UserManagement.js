@@ -1,35 +1,33 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
-import { Box, Typography, Checkbox, Table, TableBody, TableCell, TableHead, TableRow, Paper, MenuItem, Select, FormControl, InputLabel, TablePagination, CircularProgress, Snackbar, Alert } from '@mui/material';
-import { useNavigate } from 'react-router-dom'; // Importa o useNavigate
+import { Box, Typography, Checkbox, Table, TableBody, TableCell, TableHead, TableRow, Paper, MenuItem, Select, FormControl, InputLabel, TablePagination, CircularProgress, Snackbar, Alert, Button } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from './AuthContext';
 
 const UserManagement = () => {
   const { user } = useContext(AuthContext);
   const [users, setUsers] = useState([]);
-  const [selectedRoles, setSelectedRoles] = useState({}); // Armazena as roles selecionadas por usuário
-  const [filteredRole, setFilteredRole] = useState(''); // Armazena o filtro de role
-  const [page, setPage] = useState(0); // Estado da página atual
-  const [rowsPerPage, setRowsPerPage] = useState(5); // Quantidade de usuários por página
-  const [loading, setLoading] = useState(false); // Estado de carregamento
-  const [snackbarMessage, setSnackbarMessage] = useState(''); // Armazena a mensagem do snackbar
-  const [snackbarType, setSnackbarType] = useState('success'); // Tipo de mensagem no snackbar ('success', 'error')
-  const [openSnackbar, setOpenSnackbar] = useState(false); // Estado do snackbar
+  const [selectedRoles, setSelectedRoles] = useState({});
+  const [filteredRole, setFilteredRole] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [loading, setLoading] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarType, setSnackbarType] = useState('success');
+  const [openSnackbar, setOpenSnackbar] = useState(false);
 
-  const roles = ['Admin', 'Atendente', 'Usuario']; // Roles disponíveis
-  const navigate = useNavigate(); // Instancia o hook useNavigate
+  const roles = ['Admin', 'Atendente', 'Usuario'];
+  const navigate = useNavigate();
 
-  // Função para buscar os usuários
   const fetchUsers = async () => {
     setLoading(true);
     try {
       const response = await axios.get('http://localhost:5228/v1/identity/users', { withCredentials: true });
       setUsers(response.data);
-      // Inicializa o estado selectedRoles com as roles atuais de cada usuário
       const initialRoles = {};
       response.data.forEach(user => {
         initialRoles[user.email] = user.roles.reduce((acc, role) => {
-          acc[role] = true; // Marca as roles já atribuídas como true
+          acc[role] = true;
           return acc;
         }, {});
       });
@@ -57,25 +55,82 @@ const UserManagement = () => {
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
-        withCredentials: true,  // Inclui cookies de sessão na requisição
+        withCredentials: true,
       });
 
       setSnackbarMessage(`Role ${action === 'add' ? 'adicionada' : 'removida'} com sucesso para o usuário ${userEmail}`);
       setSnackbarType('success');
-      fetchUsers(); // Recarrega a lista de usuários após a alteração de role
+      fetchUsers();
     } catch (error) {
       console.error('Erro ao alterar a role', error);
       if (error.response && error.response.data) {
-        setSnackbarMessage(error.response.data); // Exibe a mensagem de erro personalizada do backend
-        // Verifica se é o erro específico de não poder remover a role 'Atendente'
+        setSnackbarMessage(error.response.data);
         if (error.response.data.includes("Não é possível remover a role 'Atendente'")) {
           setTimeout(() => {
-            navigate('/'); // Redireciona para a tela principal após mostrar a mensagem
-          }, 3000); // Aguarda 3 segundos antes de redirecionar
+            navigate('/');
+          }, 3000);
         }
       } else {
         setSnackbarMessage('Erro ao alterar a role');
       }
+      setSnackbarType('error');
+    } finally {
+      setLoading(false);
+      setOpenSnackbar(true);
+    }
+  };
+
+  // Função para bloquear um usuário
+  const blockUser = async (userId, isPermanent = false, lockoutDurationMinutes = 0) => {
+    setLoading(true);
+    try {
+      const payload = {
+        userId: userId,
+        isPermanent: isPermanent,
+        lockoutDurationMinutes: lockoutDurationMinutes,
+      };
+  
+      await axios.post('http://localhost:5228/v1/identity/block-user', payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        withCredentials: true,  // Se estiver usando autenticação com cookies, mantenha isso
+      });
+  
+      setSnackbarMessage(isPermanent ? 'Usuário bloqueado permanentemente.' : `Usuário bloqueado por ${lockoutDurationMinutes} minutos.`);
+      setSnackbarType('success');
+      fetchUsers();  // Atualiza a lista de usuários
+    } catch (error) {
+      console.error('Erro ao bloquear o usuário', error);
+      setSnackbarMessage('Erro ao bloquear o usuário');
+      setSnackbarType('error');
+    } finally {
+      setLoading(false);
+      setOpenSnackbar(true);
+    }
+  };
+
+  // Função para desbloquear um usuário
+  const unblockUser = async (userId) => {
+    setLoading(true);
+    try {
+      const payload = { userId: userId };
+
+      await axios.post('http://localhost:5228/v1/identity/unblock-user', payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        withCredentials: true,
+      });
+
+      setSnackbarMessage('Usuário desbloqueado com sucesso.');
+      setSnackbarType('success');
+      fetchUsers();  // Atualiza a lista de usuários
+    } catch (error) {
+      console.error('Erro ao desbloquear o usuário', error);
+      setSnackbarMessage('Erro ao desbloquear o usuário');
       setSnackbarType('error');
     } finally {
       setLoading(false);
@@ -102,29 +157,28 @@ const UserManagement = () => {
     changeUserRole(email, role, action);
   };
 
-  // Função para lidar com a mudança de página
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
 
-  // Função para lidar com a mudança de itens por página
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0); // Volta para a primeira página quando muda a quantidade de itens por página
+    setPage(0);
   };
 
-  // Função para filtrar usuários por role
   const handleFilterChange = (event) => {
     setFilteredRole(event.target.value);
   };
 
-  // Filtra os usuários de acordo com a role selecionada
   const filteredUsers = filteredRole
     ? users.filter(user => user.roles.includes(filteredRole))
     : users;
 
-  // Pagina os usuários filtrados
   const paginatedUsers = filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+  const isUserBlocked = (user) => {
+    return user.lockoutEnd && new Date(user.lockoutEnd) > new Date();
+  };
 
   return (
     <Box>
@@ -132,7 +186,6 @@ const UserManagement = () => {
         Gerenciamento de Usuários
       </Typography>
 
-      {/* Filtro por Role */}
       <FormControl sx={{ mb: 2, minWidth: 200 }}>
         <InputLabel id="role-filter-label">Filtrar por Role</InputLabel>
         <Select
@@ -162,6 +215,7 @@ const UserManagement = () => {
                 <TableCell>Email</TableCell>
                 <TableCell>Nome</TableCell>
                 <TableCell>Roles</TableCell>
+                <TableCell>Ações</TableCell> {/* Coluna para ações, como bloquear/desbloquear */}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -180,13 +234,44 @@ const UserManagement = () => {
                       </Box>
                     ))}
                   </TableCell>
+                  <TableCell>
+                    {isUserBlocked(user) ? (
+                      <Button
+                        variant="contained"
+                        color="success"
+                        onClick={() => unblockUser(user.id)}  // Desbloqueia o usuário
+                        disabled={loading}
+                      >
+                        Desbloquear
+                      </Button>
+                    ) : (
+                      <>
+                        <Button
+                          variant="contained"
+                          color="secondary"
+                          onClick={() => blockUser(user.id, true)} // Bloqueia o usuário permanentemente
+                          disabled={loading}
+                        >
+                          Bloquear
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="warning"
+                          onClick={() => blockUser(user.id, false, 60)} // Bloqueia o usuário por 60 minutos
+                          disabled={loading}
+                          sx={{ ml: 1 }}
+                        >
+                          Bloquear por 60 min
+                        </Button>
+                      </>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         )}
 
-        {/* Paginação */}
         <TablePagination
           component="div"
           count={filteredUsers.length}
@@ -197,7 +282,6 @@ const UserManagement = () => {
         />
       </Paper>
 
-      {/* Snackbar para mostrar mensagens de sucesso ou erro */}
       <Snackbar
         open={openSnackbar}
         autoHideDuration={6000}

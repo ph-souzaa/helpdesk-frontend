@@ -14,6 +14,8 @@ import Layout from './Layout';
 import theme from './theme'; 
 import TicketEdit from './TicketEdit';
 import UserManagement from './UserManagement';
+import ForgotPassword from './ForgotPassword';
+import ResetPassword from './ResetPassword';
 
 function App() {
   return (
@@ -24,6 +26,8 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:userId/:token" element={<ResetPassword />} />
 
             {/* Rotas Privadas com Layout Moderno */}
             <Route
@@ -62,7 +66,6 @@ function App() {
                 />
               }
             />
-
             <Route
               path="/tickets/:id"
               element={
@@ -108,7 +111,7 @@ function App() {
                       <UserManagement />
                     </Layout>
                   )}
-                  adminOnly={true}  // Apenas admins podem acessar
+                  adminOnly={true}
                 />
               }
             />

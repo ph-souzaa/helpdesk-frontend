@@ -26,6 +26,8 @@ function Layout({ children }) {
     { text: 'Gerenciar Usuários', icon: <PeopleIcon />, adminOnly: true, path: '/users' } // Novo item para admins
   ];
 
+  console.log(user);
+
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
