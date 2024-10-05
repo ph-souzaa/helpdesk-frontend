@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { Navigate } from 'react-router-dom';
-import { AuthContext } from './AuthContext';
+import { AuthContext } from '../components/AuthContext';
 import { CircularProgress, Box } from '@mui/material';
 
 const PrivateRoute = ({ element: Component, adminOnly = false, ...rest }) => {

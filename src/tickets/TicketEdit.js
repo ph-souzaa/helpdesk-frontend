@@ -15,7 +15,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AuthContext } from './AuthContext'; // Importe o contexto de autenticação
+import { AuthContext } from '../components/AuthContext'; // Importe o contexto de autenticação
 
 function TicketEdit() {
   const { id } = useParams();

@@ -17,8 +17,8 @@ import {
   Box,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import Layout from './Layout'; // Importe o novo Layout
-import { AuthContext } from './AuthContext'; // Importe o contexto de autenticação
+import Layout from '../components/Layout'; // Importe o novo Layout
+import { AuthContext } from '../components/AuthContext'; // Importe o contexto de autenticação
 
 function TicketHistory() {
   const [tickets, setTickets] = useState([]);

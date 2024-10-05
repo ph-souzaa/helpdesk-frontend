@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { Box, Typography, Checkbox, Table, TableBody, TableCell, TableHead, TableRow, Paper, MenuItem, Select, FormControl, InputLabel, TablePagination, CircularProgress, Snackbar, Alert, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from './AuthContext';
+import { AuthContext } from '../components/AuthContext';
 
 const UserManagement = () => {
   const { user } = useContext(AuthContext);

@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import { Menu as MenuIcon, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, Home as HomeIcon, History as HistoryIcon, Add as AddIcon, Category as CategoryIcon, People as PeopleIcon, Brightness4 as Brightness4Icon, Brightness7 as Brightness7Icon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from './AuthContext';
+import { AuthContext } from '../components/AuthContext';
 import LogoutButton from './LogoutButton';
 
 const drawerWidth = 240;

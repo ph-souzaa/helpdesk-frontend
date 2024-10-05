@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import { Edit, Visibility, KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { getStatusLabel, getPriorityLabel } from './utils';
+import { getStatusLabel, getPriorityLabel } from '../utils/utils';
 
 function TicketList({ tickets, isAdmin, isAtendente, isUser, currentUserId }) {
   const navigate = useNavigate();

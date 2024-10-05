@@ -11,7 +11,7 @@ import {
   Collapse,
 } from '@mui/material';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { AuthContext } from './AuthContext';
+import { AuthContext } from '../components/AuthContext';
 import { Fade } from '@mui/material';
 import { CircularProgress } from '@mui/material';
 

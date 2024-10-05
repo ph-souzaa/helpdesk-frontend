@@ -19,8 +19,8 @@ import {
   Stack,
   Grid,
 } from '@mui/material';
-import { getStatusLabel, getPriorityLabel } from './utils';
-import { AuthContext } from './AuthContext';
+import { getStatusLabel, getPriorityLabel } from '../utils/utils';
+import { AuthContext } from '../components/AuthContext';
 
 function TicketDetails() {
   const { id } = useParams();

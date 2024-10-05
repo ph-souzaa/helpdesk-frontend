@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { AuthContext } from './AuthContext';
+import { AuthContext } from '../components/AuthContext';
 import axios from 'axios';
 import {
   AppBar,
@@ -11,8 +11,8 @@ import {
   Grid,
   Paper,
 } from '@mui/material';
-import LogoutButton from './LogoutButton';
-import TicketList from './TicketList';
+import LogoutButton from '../components/LogoutButton';
+import TicketList from '../tickets/TicketList';
 import { useNavigate } from 'react-router-dom';
 import {
   BarChart,

@@ -1,21 +1,21 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './AuthContext';
+import { AuthProvider } from '../components/AuthContext';
 import { ThemeProvider, CssBaseline } from '@mui/material';
-import Login from './Login';
-import Register from './Register';
-import Dashboard from './Dashboard';
-import PrivateRoute from './PrivateRoute';
-import TicketDetails from './TicketDetails';
-import TicketCreate from './TicketCreate';
-import TicketHistory from './TicketHistory';
-import CategoryManagement from './CategoryManagement';
-import Layout from './Layout';
-import theme from './theme'; 
-import TicketEdit from './TicketEdit';
-import UserManagement from './UserManagement';
-import ForgotPassword from './ForgotPassword';
-import ResetPassword from './ResetPassword';
+import Login from '../pages/Login';
+import Register from '../pages/Register';
+import Dashboard from '../pages//Dashboard';
+import PrivateRoute from '../components/PrivateRoute';
+import TicketDetails from '../tickets/TicketDetails';
+import TicketCreate from '../tickets/TicketCreate';
+import TicketHistory from '../tickets/TicketHistory';
+import TicketEdit from '../tickets/TicketEdit';
+import CategoryManagement from '../categories/CategoryManagement';
+import Layout from '../components/Layout';
+import theme from '../styles/theme'; 
+import UserManagement from '../users/UserManagement';
+import ForgotPassword from '../pages/ForgotPassword';
+import ResetPassword from '../pages/ResetPassword';
 
 function App() {
   return (

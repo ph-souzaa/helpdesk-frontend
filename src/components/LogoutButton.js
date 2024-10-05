@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { IconButton } from '@mui/material';  // Remova a importação incorreta de Logout aqui
 import LogoutIcon from '@mui/icons-material/Logout';  // Corrija a importação do ícone de logout
 import axios from 'axios';
-import { AuthContext } from './AuthContext';
+import { AuthContext } from '../components/AuthContext';
 
 function LogoutButton() {
   const { setUser } = useContext(AuthContext);
